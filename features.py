@@ -87,12 +87,17 @@ def make_supervised(df: pd.DataFrame, horizon: int = 1) -> Tuple[pd.DataFrame, p
 
 def train_model(X: pd.DataFrame, y: pd.Series, model_name: str):
     model_name = (model_name or 'Linear Regression').lower()
+    n_samples = int(len(X))
+    if n_samples < 1:
+        raise ValueError('Not enough samples to train the model (0 rows).')
     if model_name in ['linear regression', 'linear']:
         model = LinearRegression(n_jobs=None) if 'n_jobs' in LinearRegression().get_params() else LinearRegression()
     elif model_name in ['random forest', 'rf', 'randomforest']:
         model = RandomForestRegressor(n_estimators=400, random_state=42, n_jobs=-1)
     elif model_name in ['knn', 'k-nearest neighbors', 'knearest']:
-        model = KNeighborsRegressor(n_neighbors=10, weights='distance')
+        # Ensure n_neighbors does not exceed available samples
+        n_neighbors = max(1, min(10, n_samples))
+        model = KNeighborsRegressor(n_neighbors=n_neighbors, weights='distance')
     else:
         raise ValueError(f'Unsupported model: {model_name}')
     model.fit(X, y)
